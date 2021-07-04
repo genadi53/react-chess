@@ -8,11 +8,12 @@ interface Props {
 const Tile = ({ isEven, image }: Props) => {
   return (
     <div className={`tile ${isEven ? "black-tile" : "white-tile"}`}>
-      <img
-        //alt="rook"
-        className={"chess-piece-image"}
-        src={image}
-      ></img>
+      {image && (
+        <div
+          className={"chess-piece"}
+          style={{ backgroundImage: `url(${image})` }}
+        ></div>
+      )}
     </div>
   );
 };

@@ -1,3 +1,4 @@
+import React from "react";
 import Tile from "../tiles/tile.component";
 
 import "./chessboard.css";
@@ -32,6 +33,42 @@ for (let p = 0; p < 2; p++) {
   pieces.push({ image: `assets/images/king_${type}.png`, x: 4, y });
 }
 
+let selectedPiece: HTMLElement | null = null;
+
+const grabPiece = (e: React.MouseEvent) => {
+  const element = e.target as HTMLElement;
+  if (element.classList.contains("chess-piece")) {
+    //console.log(e.target);
+
+    const x = e.clientX - 50;
+    const y = e.clientY - 50;
+    element.style.position = "absolute";
+    element.style.left = `${x}px`;
+    element.style.top = `${y}px`;
+
+    selectedPiece = element;
+  }
+};
+
+const movePiece = (e: React.MouseEvent) => {
+  if (selectedPiece) {
+    //console.log(e.target);
+
+    const x = e.clientX - 50;
+    const y = e.clientY - 50;
+    selectedPiece.style.position = "absolute";
+    selectedPiece.style.left = `${x}px`;
+    selectedPiece.style.top = `${y}px`;
+    console.log(selectedPiece);
+  }
+};
+
+const dropPiece = () => {
+  if (selectedPiece) {
+    selectedPiece = null;
+  }
+};
+
 const Chessboard = () => {
   let board = [];
 
@@ -48,11 +85,20 @@ const Chessboard = () => {
       });
 
       board.push(<Tile key={tileKey} image={image} isEven={isEven}></Tile>);
-      console.log(tileKey);
+      //console.log(tileKey);
     }
   }
 
-  return <div id="chessboard">{board}</div>;
+  return (
+    <div
+      id="chessboard"
+      onMouseDown={(e) => grabPiece(e)}
+      onMouseMove={(e) => movePiece(e)}
+      onMouseUp={() => dropPiece()}
+    >
+      {board}
+    </div>
+  );
 };
 
 export default Chessboard;
