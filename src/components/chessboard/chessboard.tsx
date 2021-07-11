@@ -1,47 +1,25 @@
 import React, { useState, useEffect, useRef } from "react";
 import Tile from "../tiles/tile.component";
-
+import Referee from "../referee/referee";
+import { setupBoard } from "./setupBoard";
+import { Piece } from "./piece";
 import "./chessboard.css";
 const horizontalAxis = ["a", "b", "c", "d", "e", "f", "g", "h"];
 const verticalAxis = ["1", "2", "3", "4", "5", "6", "7", "8"];
 
-interface Piece {
-  image: string;
-  //   hoisontalPos: string;
-  //   verticalPos: string;
-  x: number;
-  y: number;
-}
-
 const Chessboard = () => {
   let board = [];
-  //let selectedPiece: HTMLElement | null = null;
-
   const chessboardRef = useRef<HTMLDivElement>(null);
   const [pieces, setPieces] = useState<Piece[]>([]);
   const [gridX, setGridX] = useState(0);
   const [gridY, setGridY] = useState(0);
   const [selectedPiece, setSelectedPiece] = useState<HTMLElement | null>(null);
 
-  useEffect(() => {
-    const initialBoard: Piece[] = [];
-    for (let i = 0; i < 8; i++) {
-      initialBoard.push({ image: "assets/images/pawn_b.png", x: i, y: 6 });
-      initialBoard.push({ image: "assets/images/pawn_w.png", x: i, y: 1 });
-    }
+  const referee = new Referee();
 
-    for (let p = 0; p < 2; p++) {
-      const type = p === 0 ? "b" : "w";
-      const y = p === 0 ? 7 : 0;
-      initialBoard.push({ image: `assets/images/rook_${type}.png`, x: 0, y });
-      initialBoard.push({ image: `assets/images/rook_${type}.png`, x: 7, y });
-      initialBoard.push({ image: `assets/images/knight_${type}.png`, x: 1, y });
-      initialBoard.push({ image: `assets/images/knight_${type}.png`, x: 6, y });
-      initialBoard.push({ image: `assets/images/bishop_${type}.png`, x: 2, y });
-      initialBoard.push({ image: `assets/images/bishop_${type}.png`, x: 5, y });
-      initialBoard.push({ image: `assets/images/queen_${type}.png`, x: 3, y });
-      initialBoard.push({ image: `assets/images/king_${type}.png`, x: 4, y });
-    }
+  useEffect(() => {
+    let initialBoard: Piece[] = [];
+    initialBoard = setupBoard();
     setPieces(initialBoard);
   }, []);
 
@@ -117,12 +95,28 @@ const Chessboard = () => {
         Math.ceil((e.clientY - chessboard.offsetTop - 800) / 100)
       );
 
-      console.log(newX, newY);
+      //console.log(newX, newY);
       setPieces((currentPieces) => {
         const newPieces = currentPieces.map((p) => {
           if (p.x === gridX && p.y === gridY) {
-            p.x = newX;
-            p.y = newY;
+            const isValidMove = referee.isValidMove(
+              gridX,
+              gridY,
+              newX,
+              newY,
+              p.type,
+              p.color,
+              currentPieces
+            );
+
+            if (isValidMove) {
+              p.x = newX;
+              p.y = newY;
+            } else {
+              selectedPiece.style.position = "relative";
+              selectedPiece.style.removeProperty("top");
+              selectedPiece.style.removeProperty("left");
+            }
           }
           return p;
         });
