@@ -12,3 +12,7 @@ export interface Piece {
   color: Color;
   enPassant?: boolean;
 }
+
+export function samePosition(p1: Position, p2: Position) {
+  return p1.x === p2.x && p1.y === p2.y;
+}

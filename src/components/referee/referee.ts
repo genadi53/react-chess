@@ -1,32 +1,32 @@
 import { PieceType, Color } from "../chessboard/pieceTypes";
-import { Piece } from "../chessboard/piece";
+import { Piece, Position } from "../chessboard/piece";
 
 export default class Referee {
-  isTileOccupied(x: number, y: number, boardState: Piece[]): boolean {
+  isTileOccupied(tilePosition: Position, boardState: Piece[]): boolean {
     const piece = boardState.find(
-      (p) => p.position.x === x && p.position.y === y
+      (p) => p.position.x === tilePosition.x && p.position.y === tilePosition.y
     );
     return piece ? true : false;
     //return piece !== null ? true : false;
   }
 
   tileIsOccupiedByOpponent(
-    x: number,
-    y: number,
+    tilePosition: Position,
     boardState: Piece[],
     color: Color
   ): boolean {
     const piece = boardState.find(
-      (p) => p.position.x === x && p.position.y === y && p.color !== color
+      (p) =>
+        p.position.x === tilePosition.x &&
+        p.position.y === tilePosition.y &&
+        p.color !== color
     );
     return piece ? true : false;
   }
 
   isEnPassant(
-    px: number,
-    py: number,
-    x: number,
-    y: number,
+    previousPosition: Position,
+    newPosition: Position,
     type: PieceType,
     color: Color,
     boardState: Piece[]
@@ -34,11 +34,15 @@ export default class Referee {
     if (type === PieceType.PAWN) {
       const pawnDirection = color === Color.WHITE ? 1 : -1;
 
-      if ((x - px === -1 || x - px === 1) && y - py === pawnDirection) {
+      if (
+        (newPosition.x - previousPosition.x === -1 ||
+          newPosition.x - previousPosition.x === 1) &&
+        newPosition.y - previousPosition.y === pawnDirection
+      ) {
         const piece = boardState.find(
           (p) =>
-            p.position.x === x &&
-            p.position.y === y - pawnDirection &&
+            p.position.x === newPosition.x &&
+            p.position.y === newPosition.y - pawnDirection &&
             p.enPassant
         );
         //console.log(piece);
@@ -48,10 +52,8 @@ export default class Referee {
     }
   }
   isValidMove(
-    px: number,
-    py: number,
-    x: number,
-    y: number,
+    previousPosition: Position,
+    newPosition: Position,
     type: PieceType,
     color: Color,
     boardState: Piece[]
@@ -61,28 +63,44 @@ export default class Referee {
 
     // PAWN MOVEMENT
     if (type === PieceType.PAWN) {
-      if (px === x && py === startRow && y - py === 2 * pawnDirection) {
+      if (
+        previousPosition.x === newPosition.x &&
+        previousPosition.y === startRow &&
+        newPosition.y - previousPosition.y === 2 * pawnDirection
+      ) {
         if (
-          !this.isTileOccupied(x, y, boardState) &&
-          !this.isTileOccupied(x, y - pawnDirection, boardState)
+          !this.isTileOccupied(newPosition, boardState) &&
+          !this.isTileOccupied(
+            { x: newPosition.x, y: newPosition.y - pawnDirection },
+            boardState
+          )
         ) {
           return true;
         }
-      } else if (px === x && y - py === pawnDirection) {
-        if (!this.isTileOccupied(x, y, boardState)) {
+      } else if (
+        previousPosition.x === newPosition.x &&
+        newPosition.y - previousPosition.y === pawnDirection
+      ) {
+        if (!this.isTileOccupied(newPosition, boardState)) {
           return true;
         }
       }
       // PAWN ATACK LEFT
-      else if (x - px === -1 && y - py === pawnDirection) {
+      else if (
+        newPosition.x - previousPosition.x === -1 &&
+        newPosition.y - previousPosition.y === pawnDirection
+      ) {
         //console.log("left");
-        if (this.tileIsOccupiedByOpponent(x, y, boardState, color)) {
+        if (this.tileIsOccupiedByOpponent(newPosition, boardState, color)) {
           return true;
         }
         // PAWN ATACK RIGHT
-      } else if (x - px === 1 && y - py === pawnDirection) {
+      } else if (
+        newPosition.x - previousPosition.x === 1 &&
+        newPosition.y - previousPosition.y === pawnDirection
+      ) {
         //console.log("right");
-        if (this.tileIsOccupiedByOpponent(x, y, boardState, color)) {
+        if (this.tileIsOccupiedByOpponent(newPosition, boardState, color)) {
           return true;
         }
       }

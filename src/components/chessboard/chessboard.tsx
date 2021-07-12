@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import Referee from "../referee/referee";
 import { setupBoard } from "./setupBoard";
-import { Piece } from "./piece";
-import { Color, PieceType, verticalAxis, horizontalAxis } from "./pieceTypes";
+import { Piece, Position, samePosition } from "./piece";
+import { Color, PieceType } from "./pieceTypes";
+import { VERTICAL_AXIS, HORIZONTAL_AXIS, GRID_SIZE } from "./constants";
 import Tile from "../tiles/tile.component";
 import "./chessboard.css";
 
@@ -10,8 +11,10 @@ const Chessboard = () => {
   let board = [];
   const chessboardRef = useRef<HTMLDivElement>(null);
   const [pieces, setPieces] = useState<Piece[]>([]);
-  const [gridX, setGridX] = useState(0);
-  const [gridY, setGridY] = useState(0);
+  const [previousPosition, setPreviousPosition] = useState<Position>({
+    x: -1,
+    y: -1,
+  });
   const [selectedPiece, setSelectedPiece] = useState<HTMLElement | null>(null);
 
   const referee = new Referee();
@@ -23,18 +26,14 @@ const Chessboard = () => {
   }, []);
 
   //set the board
-  for (let j = verticalAxis.length - 1; j >= 0; j--) {
-    for (let i = 0; i < horizontalAxis.length; i++) {
-      let tileKey = `${horizontalAxis[i]}${verticalAxis[j]}`;
+  for (let j = VERTICAL_AXIS.length - 1; j >= 0; j--) {
+    for (let i = 0; i < HORIZONTAL_AXIS.length; i++) {
+      let tileKey = `${HORIZONTAL_AXIS[i]}${VERTICAL_AXIS[j]}`;
       const isEven = (j + i + 2) % 2 === 0;
-      let image = undefined;
-
-      pieces.forEach((p) => {
-        if (p.position.x === i && p.position.y === j) {
-          image = p.image;
-        }
-      });
-
+      const piece = pieces.find((p) =>
+        samePosition(p.position, { x: i, y: j })
+      );
+      let image = piece ? piece.image : undefined;
       board.push(<Tile key={tileKey} image={image} isEven={isEven}></Tile>);
       //console.log(tileKey);
     }
@@ -46,14 +45,14 @@ const Chessboard = () => {
 
     if (element.classList.contains("chess-piece") && chessboard) {
       //console.log(e.target);
-
-      setGridX(Math.floor((e.clientX - chessboard.offsetLeft) / 100));
-      setGridY(
-        Math.abs(Math.ceil((e.clientY - chessboard.offsetTop - 800) / 100))
+      const grabX = Math.floor((e.clientX - chessboard.offsetLeft) / GRID_SIZE);
+      const grabY = Math.abs(
+        Math.ceil((e.clientY - chessboard.offsetTop - 800) / GRID_SIZE)
       );
+      setPreviousPosition({ x: grabX, y: grabY });
 
-      const x = e.clientX - 50;
-      const y = e.clientY - 50;
+      const x = e.clientX - GRID_SIZE / 2;
+      const y = e.clientY - GRID_SIZE / 2;
       element.style.position = "absolute";
       element.style.left = `${x}px`;
       element.style.top = `${y}px`;
@@ -73,8 +72,8 @@ const Chessboard = () => {
       const maxX = chessboard.offsetLeft + chessboard.clientWidth - 75;
       const maxY = chessboard.offsetTop + chessboard.clientHeight - 75;
 
-      const x = e.clientX - 50;
-      const y = e.clientY - 50;
+      const x = e.clientX - GRID_SIZE / 2;
+      const y = e.clientY - GRID_SIZE / 2;
 
       selectedPiece.style.position = "absolute";
 
@@ -88,32 +87,27 @@ const Chessboard = () => {
   function dropPiece(e: React.MouseEvent) {
     const chessboard = chessboardRef.current;
     if (selectedPiece && chessboard) {
-      const x = Math.floor((e.clientX - chessboard.offsetLeft) / 100);
+      const x = Math.floor((e.clientX - chessboard.offsetLeft) / GRID_SIZE);
       const y = Math.abs(
-        Math.ceil((e.clientY - chessboard.offsetTop - 800) / 100)
+        Math.ceil((e.clientY - chessboard.offsetTop - 800) / GRID_SIZE)
       );
 
-      const currentPiece = pieces.find(
-        (p) => p.position.x === gridX && p.position.y === gridY
+      const currentPiece = pieces.find((p) =>
+        samePosition(p.position, previousPosition)
       );
-      //const attackedPiece = pieces.find((p) => p.position.x === x && p.position.y === y);
 
       if (currentPiece) {
         const validMove = referee.isValidMove(
-          gridX,
-          gridY,
-          x,
-          y,
+          previousPosition,
+          { x, y },
           currentPiece.type,
           currentPiece.color,
           pieces
         );
 
         const isEnPassantMove = referee.isEnPassant(
-          gridX,
-          gridY,
-          x,
-          y,
+          previousPosition,
+          { x, y },
           currentPiece.type,
           currentPiece.color,
           pieces
@@ -122,15 +116,13 @@ const Chessboard = () => {
         if (isEnPassantMove) {
           const pawnDirection = currentPiece.color === Color.WHITE ? 1 : -1;
           const updatedPieces = pieces.reduce((results, piece) => {
-            if (piece.position.x === gridX && piece.position.y === gridY) {
+            if (samePosition(piece.position, previousPosition)) {
               piece.enPassant = false;
               piece.position.x = x;
               piece.position.y = y;
               results.push(piece);
             } else if (
-              !(
-                piece.position.x === x && piece.position.y === y - pawnDirection
-              )
+              !samePosition(piece.position, { x, y: y - pawnDirection })
             ) {
               if (piece.type === PieceType.PAWN) {
                 piece.enPassant = false;
@@ -145,18 +137,15 @@ const Chessboard = () => {
           //UPDATES THE PIECE POSITION
           //AND IF A PIECE IS ATTACKED, REMOVES IT
           const updatedPieces = pieces.reduce((results, piece) => {
-            if (piece.position.x === gridX && piece.position.y === gridY) {
-              if (Math.abs(gridY - y) === 2 && piece.type === PieceType.PAWN) {
-                piece.enPassant = true;
-                //console.log(piece.enPassant);
-              } else {
-                piece.enPassant = false;
-                //console.log(piece.enPassant);
-              }
+            if (samePosition(piece.position, previousPosition)) {
+              piece.enPassant =
+                Math.abs(previousPosition.y - y) === 2 &&
+                piece.type === PieceType.PAWN;
+
               piece.position.x = x;
               piece.position.y = y;
               results.push(piece);
-            } else if (!(piece.position.x === x && piece.position.y === y)) {
+            } else if (!samePosition(piece.position, { x, y })) {
               if (piece.type === PieceType.PAWN) {
                 piece.enPassant = false;
               }
