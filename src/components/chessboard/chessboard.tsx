@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import Tile from "../tiles/tile.component";
 import Referee from "../referee/referee";
 import { setupBoard } from "./setupBoard";
 import { Piece } from "./piece";
+import { Color, PieceType, verticalAxis, horizontalAxis } from "./pieceTypes";
+import Tile from "../tiles/tile.component";
 import "./chessboard.css";
-const horizontalAxis = ["a", "b", "c", "d", "e", "f", "g", "h"];
-const verticalAxis = ["1", "2", "3", "4", "5", "6", "7", "8"];
 
 const Chessboard = () => {
   let board = [];
@@ -23,7 +22,7 @@ const Chessboard = () => {
     setPieces(initialBoard);
   }, []);
 
-  // set the board
+  //set the board
   for (let j = verticalAxis.length - 1; j >= 0; j--) {
     for (let i = 0; i < horizontalAxis.length; i++) {
       let tileKey = `${horizontalAxis[i]}${verticalAxis[j]}`;
@@ -31,7 +30,7 @@ const Chessboard = () => {
       let image = undefined;
 
       pieces.forEach((p) => {
-        if (p.x === i && p.y === j) {
+        if (p.position.x === i && p.position.y === j) {
           image = p.image;
         }
       });
@@ -86,45 +85,98 @@ const Chessboard = () => {
     }
   };
 
-  const dropPiece = (e: React.MouseEvent) => {
+  function dropPiece(e: React.MouseEvent) {
     const chessboard = chessboardRef.current;
-
     if (selectedPiece && chessboard) {
-      const newX = Math.floor((e.clientX - chessboard.offsetLeft) / 100);
-      const newY = Math.abs(
+      const x = Math.floor((e.clientX - chessboard.offsetLeft) / 100);
+      const y = Math.abs(
         Math.ceil((e.clientY - chessboard.offsetTop - 800) / 100)
       );
 
-      //console.log(newX, newY);
-      setPieces((currentPieces) => {
-        const newPieces = currentPieces.map((p) => {
-          if (p.x === gridX && p.y === gridY) {
-            const isValidMove = referee.isValidMove(
-              gridX,
-              gridY,
-              newX,
-              newY,
-              p.type,
-              p.color,
-              currentPieces
-            );
+      const currentPiece = pieces.find(
+        (p) => p.position.x === gridX && p.position.y === gridY
+      );
+      //const attackedPiece = pieces.find((p) => p.position.x === x && p.position.y === y);
 
-            if (isValidMove) {
-              p.x = newX;
-              p.y = newY;
-            } else {
-              selectedPiece.style.position = "relative";
-              selectedPiece.style.removeProperty("top");
-              selectedPiece.style.removeProperty("left");
+      if (currentPiece) {
+        const validMove = referee.isValidMove(
+          gridX,
+          gridY,
+          x,
+          y,
+          currentPiece.type,
+          currentPiece.color,
+          pieces
+        );
+
+        const isEnPassantMove = referee.isEnPassant(
+          gridX,
+          gridY,
+          x,
+          y,
+          currentPiece.type,
+          currentPiece.color,
+          pieces
+        );
+
+        if (isEnPassantMove) {
+          const pawnDirection = currentPiece.color === Color.WHITE ? 1 : -1;
+          const updatedPieces = pieces.reduce((results, piece) => {
+            if (piece.position.x === gridX && piece.position.y === gridY) {
+              piece.enPassant = false;
+              piece.position.x = x;
+              piece.position.y = y;
+              results.push(piece);
+            } else if (
+              !(
+                piece.position.x === x && piece.position.y === y - pawnDirection
+              )
+            ) {
+              if (piece.type === PieceType.PAWN) {
+                piece.enPassant = false;
+              }
+              results.push(piece);
             }
-          }
-          return p;
-        });
-        return newPieces;
-      });
+            return results;
+          }, [] as Piece[]);
+
+          setPieces(updatedPieces);
+        } else if (validMove) {
+          //UPDATES THE PIECE POSITION
+          //AND IF A PIECE IS ATTACKED, REMOVES IT
+          const updatedPieces = pieces.reduce((results, piece) => {
+            if (piece.position.x === gridX && piece.position.y === gridY) {
+              if (Math.abs(gridY - y) === 2 && piece.type === PieceType.PAWN) {
+                piece.enPassant = true;
+                //console.log(piece.enPassant);
+              } else {
+                piece.enPassant = false;
+                //console.log(piece.enPassant);
+              }
+              piece.position.x = x;
+              piece.position.y = y;
+              results.push(piece);
+            } else if (!(piece.position.x === x && piece.position.y === y)) {
+              if (piece.type === PieceType.PAWN) {
+                piece.enPassant = false;
+              }
+              results.push(piece);
+            }
+
+            return results;
+          }, [] as Piece[]);
+
+          setPieces(updatedPieces);
+        } else {
+          //RESETS THE PIECE POSITION
+          selectedPiece.style.position = "relative";
+          selectedPiece.style.removeProperty("top");
+          selectedPiece.style.removeProperty("left");
+        }
+      }
       setSelectedPiece(null);
     }
-  };
+  }
 
   return (
     <div
