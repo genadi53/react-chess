@@ -1,10 +1,10 @@
 import { PieceType, Color } from "../chessboard/pieceTypes";
-import { Piece, Position } from "../chessboard/piece";
+import { Piece, Position, samePosition } from "../chessboard/piece";
 
 export default class Referee {
   isTileOccupied(tilePosition: Position, boardState: Piece[]): boolean {
-    const piece = boardState.find(
-      (p) => p.position.x === tilePosition.x && p.position.y === tilePosition.y
+    const piece = boardState.find((p) =>
+      samePosition(p.position, tilePosition)
     );
     return piece ? true : false;
     //return piece !== null ? true : false;
@@ -16,10 +16,7 @@ export default class Referee {
     color: Color
   ): boolean {
     const piece = boardState.find(
-      (p) =>
-        p.position.x === tilePosition.x &&
-        p.position.y === tilePosition.y &&
-        p.color !== color
+      (p) => samePosition(p.position, tilePosition) && p.color !== color
     );
     return piece ? true : false;
   }
@@ -51,6 +48,7 @@ export default class Referee {
       return false;
     }
   }
+
   isValidMove(
     previousPosition: Position,
     newPosition: Position,
@@ -58,50 +56,108 @@ export default class Referee {
     color: Color,
     boardState: Piece[]
   ) {
+    // const startRow = color === Color.WHITE ? 1 : 6;
+    // const pawnDirection = color === Color.WHITE ? 1 : -1;
+
+    if (type === PieceType.PAWN) {
+      return this.pawnMovement(
+        previousPosition,
+        newPosition,
+        color,
+        boardState
+      );
+    } else if (type === PieceType.KNIGHT) {
+      return this.knightMovement(
+        previousPosition,
+        newPosition,
+        color,
+        boardState
+      );
+    }
+    return false;
+  }
+
+  pawnMovement(
+    previousPosition: Position,
+    newPosition: Position,
+    color: Color,
+    boardState: Piece[]
+  ): boolean {
     const startRow = color === Color.WHITE ? 1 : 6;
     const pawnDirection = color === Color.WHITE ? 1 : -1;
-
-    // PAWN MOVEMENT
-    if (type === PieceType.PAWN) {
+    if (
+      previousPosition.x === newPosition.x &&
+      previousPosition.y === startRow &&
+      newPosition.y - previousPosition.y === 2 * pawnDirection
+    ) {
       if (
-        previousPosition.x === newPosition.x &&
-        previousPosition.y === startRow &&
-        newPosition.y - previousPosition.y === 2 * pawnDirection
+        !this.isTileOccupied(newPosition, boardState) &&
+        !this.isTileOccupied(
+          { x: newPosition.x, y: newPosition.y - pawnDirection },
+          boardState
+        )
       ) {
-        if (
-          !this.isTileOccupied(newPosition, boardState) &&
-          !this.isTileOccupied(
-            { x: newPosition.x, y: newPosition.y - pawnDirection },
-            boardState
-          )
-        ) {
-          return true;
-        }
-      } else if (
-        previousPosition.x === newPosition.x &&
-        newPosition.y - previousPosition.y === pawnDirection
-      ) {
-        if (!this.isTileOccupied(newPosition, boardState)) {
-          return true;
-        }
+        return true;
       }
-      // PAWN ATACK LEFT
-      else if (
-        newPosition.x - previousPosition.x === -1 &&
-        newPosition.y - previousPosition.y === pawnDirection
-      ) {
-        //console.log("left");
-        if (this.tileIsOccupiedByOpponent(newPosition, boardState, color)) {
-          return true;
+    } else if (
+      previousPosition.x === newPosition.x &&
+      newPosition.y - previousPosition.y === pawnDirection
+    ) {
+      if (!this.isTileOccupied(newPosition, boardState)) {
+        return true;
+      }
+    }
+    // PAWN ATACK LEFT
+    else if (
+      newPosition.x - previousPosition.x === -1 &&
+      newPosition.y - previousPosition.y === pawnDirection
+    ) {
+      //console.log("left");
+      if (this.tileIsOccupiedByOpponent(newPosition, boardState, color)) {
+        return true;
+      }
+      // PAWN ATACK RIGHT
+    } else if (
+      newPosition.x - previousPosition.x === 1 &&
+      newPosition.y - previousPosition.y === pawnDirection
+    ) {
+      //console.log("right");
+      if (this.tileIsOccupiedByOpponent(newPosition, boardState, color)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  knightMovement(
+    previousPosition: Position,
+    newPosition: Position,
+    color: Color,
+    boardState: Piece[]
+  ) {
+    for (let i = -1; i < 2; i += 2) {
+      for (let j = -1; j < 2; j += 2) {
+        // TOP AND BOTTOM MOVEMENT
+        if (newPosition.y - previousPosition.y === 2 * i) {
+          if (newPosition.x - previousPosition.x === 1 * j) {
+            if (
+              !this.isTileOccupied(newPosition, boardState) ||
+              this.tileIsOccupiedByOpponent(newPosition, boardState, color)
+            ) {
+              return true;
+            }
+          }
         }
-        // PAWN ATACK RIGHT
-      } else if (
-        newPosition.x - previousPosition.x === 1 &&
-        newPosition.y - previousPosition.y === pawnDirection
-      ) {
-        //console.log("right");
-        if (this.tileIsOccupiedByOpponent(newPosition, boardState, color)) {
-          return true;
+        // LEFT AND RIGHT MOVEMENT
+        if (newPosition.x - previousPosition.x === 2 * i) {
+          if (newPosition.y - previousPosition.y === 1 * j) {
+            if (
+              !this.isTileOccupied(newPosition, boardState) ||
+              this.tileIsOccupiedByOpponent(newPosition, boardState, color)
+            ) {
+              return true;
+            }
+          }
         }
       }
     }
