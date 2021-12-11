@@ -80,6 +80,13 @@ export default class Referee {
         color,
         boardState
       );
+    } else if (type === PieceType.ROOK) {
+      return this.rookMovement(
+        previousPosition,
+        newPosition,
+        color,
+        boardState
+      );
     }
     return false;
   }
@@ -284,6 +291,49 @@ export default class Referee {
       }
     }
 
+    return false;
+  }
+
+  rookMovement(
+    previousPosition: Position,
+    newPosition: Position,
+    color: Color,
+    boardState: Piece[]
+  ): boolean {
+    // Moving vertically
+    if (previousPosition.x === newPosition.x) {
+      for (let i = 1; i < 8; i++) {
+        let directionY = newPosition.y < previousPosition.y ? -1 : 1;
+        let passedPosition: Position = {
+          x: previousPosition.x,
+          y: previousPosition.y + i * directionY,
+        };
+        if (
+          passedPosition.x === newPosition.x &&
+          passedPosition.y === newPosition.y
+        ) {
+          return true;
+        }
+      }
+    }
+
+    // Moving horizontally
+    if (previousPosition.y === newPosition.y) {
+      for (let i = 1; i < 8; i++) {
+        let directionX = newPosition.x < previousPosition.x ? -1 : 1;
+        let passedPosition: Position = {
+          x: previousPosition.x + i * directionX,
+          y: previousPosition.y,
+        };
+        console.log(passedPosition);
+        if (
+          passedPosition.x === newPosition.x &&
+          passedPosition.y === newPosition.y
+        ) {
+          return true;
+        }
+      }
+    }
     return false;
   }
 }
