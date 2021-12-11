@@ -59,34 +59,35 @@ export default class Referee {
     // const startRow = color === Color.WHITE ? 1 : 6;
     // const pawnDirection = color === Color.WHITE ? 1 : -1;
 
-    if (type === PieceType.PAWN) {
-      return this.pawnMovement(
-        previousPosition,
-        newPosition,
-        color,
-        boardState
-      );
-    } else if (type === PieceType.KNIGHT) {
-      return this.knightMovement(
-        previousPosition,
-        newPosition,
-        color,
-        boardState
-      );
-    } else if (type === PieceType.BISHOP) {
-      return this.bishopMovement(
-        previousPosition,
-        newPosition,
-        color,
-        boardState
-      );
-    } else if (type === PieceType.ROOK) {
-      return this.rookMovement(
-        previousPosition,
-        newPosition,
-        color,
-        boardState
-      );
+    switch (type) {
+      case PieceType.PAWN:
+        return this.pawnMovement(
+          previousPosition,
+          newPosition,
+          color,
+          boardState
+        );
+      case PieceType.KNIGHT:
+        return this.knightMovement(
+          previousPosition,
+          newPosition,
+          color,
+          boardState
+        );
+      case PieceType.BISHOP:
+        return this.bishopMovement(
+          previousPosition,
+          newPosition,
+          color,
+          boardState
+        );
+      case PieceType.ROOK:
+        return this.rookMovement(
+          previousPosition,
+          newPosition,
+          color,
+          boardState
+        );
     }
     return false;
   }
@@ -312,7 +313,16 @@ export default class Referee {
           passedPosition.x === newPosition.x &&
           passedPosition.y === newPosition.y
         ) {
-          return true;
+          if (
+            this.tileIsOccupiedByOpponent(passedPosition, boardState, color) ||
+            !this.isTileOccupied(passedPosition, boardState)
+          ) {
+            return true;
+          }
+        } else {
+          if (this.isTileOccupied(passedPosition, boardState)) {
+            return false;
+          }
         }
       }
     }
@@ -325,12 +335,20 @@ export default class Referee {
           x: previousPosition.x + i * directionX,
           y: previousPosition.y,
         };
-        console.log(passedPosition);
         if (
           passedPosition.x === newPosition.x &&
           passedPosition.y === newPosition.y
         ) {
-          return true;
+          if (
+            this.tileIsOccupiedByOpponent(passedPosition, boardState, color) ||
+            !this.isTileOccupied(passedPosition, boardState)
+          ) {
+            return true;
+          }
+        } else {
+          if (this.isTileOccupied(passedPosition, boardState)) {
+            return false;
+          }
         }
       }
     }
