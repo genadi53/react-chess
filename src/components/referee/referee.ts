@@ -88,8 +88,23 @@ export default class Referee {
           color,
           boardState
         );
+      case PieceType.QUEEN:
+        return this.queenMovement(
+          previousPosition,
+          newPosition,
+          color,
+          boardState
+        );
+      case PieceType.KING:
+        return this.kingMovement(
+          previousPosition,
+          newPosition,
+          color,
+          boardState
+        );
+      default:
+        return false;
     }
-    return false;
   }
 
   pawnMovement(
@@ -196,10 +211,7 @@ export default class Referee {
           x: previousPosition.x + i,
           y: previousPosition.y + i,
         };
-        if (
-          passedPosition.x === newPosition.x &&
-          passedPosition.y === newPosition.y
-        ) {
+        if (samePosition(passedPosition, newPosition)) {
           if (
             this.tileIsOccupiedByOpponent(passedPosition, boardState, color) ||
             !this.isTileOccupied(passedPosition, boardState)
@@ -222,10 +234,7 @@ export default class Referee {
           x: previousPosition.x - i,
           y: previousPosition.y + i,
         };
-        if (
-          passedPosition.x === newPosition.x &&
-          passedPosition.y === newPosition.y
-        ) {
+        if (samePosition(passedPosition, newPosition)) {
           if (
             this.tileIsOccupiedByOpponent(passedPosition, boardState, color) ||
             !this.isTileOccupied(passedPosition, boardState)
@@ -248,10 +257,7 @@ export default class Referee {
           x: previousPosition.x + i,
           y: previousPosition.y - i,
         };
-        if (
-          passedPosition.x === newPosition.x &&
-          passedPosition.y === newPosition.y
-        ) {
+        if (samePosition(passedPosition, newPosition)) {
           if (
             this.tileIsOccupiedByOpponent(passedPosition, boardState, color) ||
             !this.isTileOccupied(passedPosition, boardState)
@@ -274,10 +280,7 @@ export default class Referee {
           x: previousPosition.x - i,
           y: previousPosition.y - i,
         };
-        if (
-          passedPosition.x === newPosition.x &&
-          passedPosition.y === newPosition.y
-        ) {
+        if (samePosition(passedPosition, newPosition)) {
           if (
             this.tileIsOccupiedByOpponent(passedPosition, boardState, color) ||
             !this.isTileOccupied(passedPosition, boardState)
@@ -309,10 +312,7 @@ export default class Referee {
           x: previousPosition.x,
           y: previousPosition.y + i * directionY,
         };
-        if (
-          passedPosition.x === newPosition.x &&
-          passedPosition.y === newPosition.y
-        ) {
+        if (samePosition(passedPosition, newPosition)) {
           if (
             this.tileIsOccupiedByOpponent(passedPosition, boardState, color) ||
             !this.isTileOccupied(passedPosition, boardState)
@@ -335,10 +335,7 @@ export default class Referee {
           x: previousPosition.x + i * directionX,
           y: previousPosition.y,
         };
-        if (
-          passedPosition.x === newPosition.x &&
-          passedPosition.y === newPosition.y
-        ) {
+        if (samePosition(passedPosition, newPosition)) {
           if (
             this.tileIsOccupiedByOpponent(passedPosition, boardState, color) ||
             !this.isTileOccupied(passedPosition, boardState)
@@ -352,6 +349,99 @@ export default class Referee {
         }
       }
     }
+    return false;
+  }
+
+  queenMovement(
+    previousPosition: Position,
+    newPosition: Position,
+    color: Color,
+    boardState: Piece[]
+  ): boolean {
+    for (let i = 1; i < 8; i++) {
+      // Moving Vertically
+      if (newPosition.x === previousPosition.x) {
+        let directionY = newPosition.y < previousPosition.y ? -1 : 1;
+        let passedPosition: Position = {
+          x: previousPosition.x,
+          y: previousPosition.y + i * directionY,
+        };
+        if (samePosition(passedPosition, newPosition)) {
+          if (
+            this.tileIsOccupiedByOpponent(passedPosition, boardState, color) ||
+            !this.isTileOccupied(passedPosition, boardState)
+          ) {
+            return true;
+          }
+        } else {
+          if (this.isTileOccupied(passedPosition, boardState)) {
+            return false;
+          }
+        }
+      }
+
+      // Moving Horizontally
+      if (newPosition.y === previousPosition.y) {
+        let directionX = newPosition.x < previousPosition.x ? -1 : 1;
+        let passedPosition: Position = {
+          x: previousPosition.x + i * directionX,
+          y: previousPosition.y,
+        };
+        if (samePosition(passedPosition, newPosition)) {
+          if (
+            this.tileIsOccupiedByOpponent(passedPosition, boardState, color) ||
+            !this.isTileOccupied(passedPosition, boardState)
+          ) {
+            return true;
+          }
+        } else {
+          if (this.isTileOccupied(passedPosition, boardState)) {
+            return false;
+          }
+        }
+      }
+
+      //Top Right
+      if (
+        newPosition.y > previousPosition.y &&
+        newPosition.x > previousPosition.x
+      ) {
+        console.log("top Right");
+      }
+
+      //Top Left
+      if (
+        newPosition.y > previousPosition.y &&
+        newPosition.x < previousPosition.x
+      ) {
+        console.log("top Left");
+      }
+
+      //Bottom Right
+      if (
+        newPosition.y > previousPosition.y &&
+        newPosition.x > previousPosition.x
+      ) {
+        console.log("Bottom Right");
+      }
+
+      //Bottom Left
+      if (
+        newPosition.y > previousPosition.y &&
+        newPosition.x < previousPosition.x
+      ) {
+        console.log("bottom Left");
+      }
+    }
+    return false;
+  }
+
+  kingMovement(
+    previousPosition: Position,
+    newPosition: Position,
+    color: Color,
+    boardState: Piece[]
+  ): boolean {
     return false;
   }
 }
