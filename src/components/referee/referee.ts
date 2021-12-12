@@ -284,50 +284,21 @@ export default class Referee {
     boardState: Piece[]
   ): boolean {
     for (let i = 1; i < 8; i++) {
-      let directionY = newPosition.y < previousPosition.y ? -1 : 1;
-      let directionX = newPosition.x < previousPosition.x ? -1 : 1;
+      // Moving to the left, right or stay on the same x-file
+      let directionX =
+        newPosition.x < previousPosition.x
+          ? -1
+          : newPosition.x > previousPosition.x
+          ? 1
+          : 0;
+      // Moving up, down or stay on the same y-file
+      let directionY =
+        newPosition.y < previousPosition.y
+          ? -1
+          : newPosition.y > previousPosition.y
+          ? 1
+          : 0;
 
-      // Moving Vertically
-      if (newPosition.x === previousPosition.x) {
-        let passedPosition: Position = {
-          x: previousPosition.x,
-          y: previousPosition.y + i * directionY,
-        };
-        if (samePosition(passedPosition, newPosition)) {
-          if (
-            this.tileIsOccupiedByOpponent(passedPosition, boardState, color) ||
-            !this.isTileOccupied(passedPosition, boardState)
-          ) {
-            return true;
-          }
-        } else {
-          if (this.isTileOccupied(passedPosition, boardState)) {
-            return false;
-          }
-        }
-      }
-
-      // Moving Horizontally
-      if (newPosition.y === previousPosition.y) {
-        let passedPosition: Position = {
-          x: previousPosition.x + i * directionX,
-          y: previousPosition.y,
-        };
-        if (samePosition(passedPosition, newPosition)) {
-          if (
-            this.tileIsOccupiedByOpponent(passedPosition, boardState, color) ||
-            !this.isTileOccupied(passedPosition, boardState)
-          ) {
-            return true;
-          }
-        } else {
-          if (this.isTileOccupied(passedPosition, boardState)) {
-            return false;
-          }
-        }
-      }
-
-      // Moving diagonally
       let passedPosition: Position = {
         x: previousPosition.x + i * directionX,
         y: previousPosition.y + i * directionY,
