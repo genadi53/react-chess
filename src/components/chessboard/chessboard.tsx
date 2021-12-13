@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Referee from "../referee/referee";
+import { isEnPassant } from "../referee/rules/pawn";
 import { setupBoard } from "./setupBoard";
 import { Piece, Position, samePosition } from "./piece";
 import { Color, PieceType } from "./pieceTypes";
@@ -105,7 +106,7 @@ const Chessboard = () => {
           pieces
         );
 
-        const isEnPassantMove = referee.isEnPassant(
+        const isEnPassantMove = isEnPassant(
           previousPosition,
           { x, y },
           currentPiece.type,
