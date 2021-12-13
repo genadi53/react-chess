@@ -2,53 +2,6 @@ import { PieceType, Color } from "../chessboard/pieceTypes";
 import { Piece, Position, samePosition } from "../chessboard/piece";
 
 export default class Referee {
-  isTileOccupied(tilePosition: Position, boardState: Piece[]): boolean {
-    const piece = boardState.find((p) =>
-      samePosition(p.position, tilePosition)
-    );
-    return piece ? true : false;
-    //return piece !== null ? true : false;
-  }
-
-  tileIsOccupiedByOpponent(
-    tilePosition: Position,
-    boardState: Piece[],
-    color: Color
-  ): boolean {
-    const piece = boardState.find(
-      (p) => samePosition(p.position, tilePosition) && p.color !== color
-    );
-    return piece ? true : false;
-  }
-
-  isEnPassant(
-    previousPosition: Position,
-    newPosition: Position,
-    type: PieceType,
-    color: Color,
-    boardState: Piece[]
-  ) {
-    if (type === PieceType.PAWN) {
-      const pawnDirection = color === Color.WHITE ? 1 : -1;
-
-      if (
-        (newPosition.x - previousPosition.x === -1 ||
-          newPosition.x - previousPosition.x === 1) &&
-        newPosition.y - previousPosition.y === pawnDirection
-      ) {
-        const piece = boardState.find(
-          (p) =>
-            p.position.x === newPosition.x &&
-            p.position.y === newPosition.y - pawnDirection &&
-            p.enPassant
-        );
-        //console.log(piece);
-        return piece ? true : false;
-      }
-      return false;
-    }
-  }
-
   isValidMove(
     previousPosition: Position,
     newPosition: Position,
@@ -104,6 +57,52 @@ export default class Referee {
         );
       default:
         return false;
+    }
+  }
+  isTileOccupied(tilePosition: Position, boardState: Piece[]): boolean {
+    const piece = boardState.find((p) =>
+      samePosition(p.position, tilePosition)
+    );
+    return piece ? true : false;
+    //return piece !== null ? true : false;
+  }
+
+  tileIsOccupiedByOpponent(
+    tilePosition: Position,
+    boardState: Piece[],
+    color: Color
+  ): boolean {
+    const piece = boardState.find(
+      (p) => samePosition(p.position, tilePosition) && p.color !== color
+    );
+    return piece ? true : false;
+  }
+
+  isEnPassant(
+    previousPosition: Position,
+    newPosition: Position,
+    type: PieceType,
+    color: Color,
+    boardState: Piece[]
+  ) {
+    if (type === PieceType.PAWN) {
+      const pawnDirection = color === Color.WHITE ? 1 : -1;
+
+      if (
+        (newPosition.x - previousPosition.x === -1 ||
+          newPosition.x - previousPosition.x === 1) &&
+        newPosition.y - previousPosition.y === pawnDirection
+      ) {
+        const piece = boardState.find(
+          (p) =>
+            p.position.x === newPosition.x &&
+            p.position.y === newPosition.y - pawnDirection &&
+            p.enPassant
+        );
+        //console.log(piece);
+        return piece ? true : false;
+      }
+      return false;
     }
   }
 
@@ -326,6 +325,37 @@ export default class Referee {
     color: Color,
     boardState: Piece[]
   ): boolean {
+    // Moving to the left, right or stay on the same x-file
+    let directionX =
+      newPosition.x < previousPosition.x
+        ? -1
+        : newPosition.x > previousPosition.x
+        ? 1
+        : 0;
+    // Moving up, down or stay on the same y-file
+    let directionY =
+      newPosition.y < previousPosition.y
+        ? -1
+        : newPosition.y > previousPosition.y
+        ? 1
+        : 0;
+
+    let passedPosition: Position = {
+      x: previousPosition.x + 1 * directionX,
+      y: previousPosition.y + 1 * directionY,
+    };
+    if (samePosition(passedPosition, newPosition)) {
+      if (
+        this.tileIsOccupiedByOpponent(passedPosition, boardState, color) ||
+        !this.isTileOccupied(passedPosition, boardState)
+      ) {
+        return true;
+      }
+    } else {
+      if (this.isTileOccupied(passedPosition, boardState)) {
+        return false;
+      }
+    }
     return false;
   }
 }
