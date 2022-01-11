@@ -17,7 +17,8 @@ const Chessboard = () => {
     y: -1,
   });
   const [selectedPiece, setSelectedPiece] = useState<HTMLElement | null>(null);
-
+  const [promotionPawn, setPromotionPawn] = useState<Piece | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
   const referee = new Referee();
 
   useEffect(() => {
@@ -145,6 +146,17 @@ const Chessboard = () => {
 
               piece.position.x = x;
               piece.position.y = y;
+
+              // CHECK FOR PAWN PROMOTION
+              let promotionRow = piece.color === Color.WHITE ? 7 : 0;
+              if (
+                piece.type === PieceType.PAWN &&
+                piece.position.y === promotionRow
+              ) {
+                setPromotionPawn(piece);
+                modalRef.current?.classList.remove("hidden");
+              }
+
               results.push(piece);
             } else if (!samePosition(piece.position, { x, y })) {
               if (piece.type === PieceType.PAWN) {
@@ -168,16 +180,81 @@ const Chessboard = () => {
     }
   }
 
+  const promote = (selectedPiece: PieceType) => {
+    if (!promotionPawn) return;
+    const updatedPieces = pieces.reduce((results, piece) => {
+      if (samePosition(piece.position, promotionPawn.position)) {
+        piece.type = selectedPiece;
+        const color = piece.color === Color.WHITE ? "w" : "b";
+        let image = "";
+        switch (selectedPiece) {
+          case PieceType.KNIGHT: {
+            image = "knight";
+            break;
+          }
+          case PieceType.BISHOP: {
+            image = "bishop";
+            break;
+          }
+          case PieceType.ROOK: {
+            image = "rook";
+            break;
+          }
+          case PieceType.QUEEN: {
+            image = "queen";
+            break;
+          }
+        }
+        piece.image = `assets/images/${image}_${color}.png`;
+      }
+
+      results.push(piece);
+      return results;
+    }, [] as Piece[]);
+    setPieces(updatedPieces);
+    modalRef.current?.classList.add("hidden");
+  };
+
+  const promotionColor = () => {
+    return promotionPawn?.color === Color.WHITE ? "w" : "b";
+  };
+
   return (
-    <div
-      id="chessboard"
-      onMouseDown={(e) => grabPiece(e)}
-      onMouseMove={(e) => movePiece(e)}
-      onMouseUp={(e) => dropPiece(e)}
-      ref={chessboardRef}
-    >
-      {board}
-    </div>
+    <>
+      <div id="promotion-modal" className="hidden" ref={modalRef}>
+        <div className="modal-body">
+          <img
+            src={`/assets/images/knight_${promotionColor()}.png`}
+            alt="promotion-knight"
+            onClick={() => promote(PieceType.KNIGHT)}
+          />
+          <img
+            src={`/assets/images/bishop_${promotionColor()}.png`}
+            alt="promotion-bishop"
+            onClick={() => promote(PieceType.BISHOP)}
+          />
+          <img
+            src={`/assets/images/rook_${promotionColor()}.png`}
+            alt="promotion-rook"
+            onClick={() => promote(PieceType.ROOK)}
+          />
+          <img
+            src={`/assets/images/queen_${promotionColor()}.png`}
+            alt="promotion-queen"
+            onClick={() => promote(PieceType.QUEEN)}
+          />
+        </div>
+      </div>
+      <div
+        id="chessboard"
+        onMouseDown={(e) => grabPiece(e)}
+        onMouseMove={(e) => movePiece(e)}
+        onMouseUp={(e) => dropPiece(e)}
+        ref={chessboardRef}
+      >
+        {board}
+      </div>
+    </>
   );
 };
 
